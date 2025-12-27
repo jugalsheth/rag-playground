@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Zap, DollarSign, Target, BarChart3, LucideIcon } from "lucide-react";
 import { RAGArchitecture } from "@/lib/ragArchitectures";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 
 interface PerformanceMetrics {
   latency: number; // ms
@@ -19,10 +20,83 @@ interface PerformanceDashboardProps {
 }
 
 export function PerformanceDashboard({ architecture }: PerformanceDashboardProps) {
-  // Calculate metrics based on architecture
-  const calculateMetrics = (arch: RAGArchitecture): PerformanceMetrics => {
-    if (!arch || !arch.flowSteps || arch.flowSteps.length === 0) {
-      // Return default metrics if architecture data is invalid
+  // Calculate metrics based on architecture - memoized for performance
+  const metrics = useMemo(() => {
+    const calculateMetrics = (arch: RAGArchitecture): PerformanceMetrics => {
+      try {
+        if (!arch || !arch.flowSteps || arch.flowSteps.length === 0) {
+          // Return default metrics if architecture data is invalid
+          return {
+            latency: 2000,
+            cost: 5,
+            accuracy: 0.80,
+            complexity: 2,
+            scalability: 3,
+          };
+        }
+
+        const totalDuration = arch.flowSteps.reduce((sum, step) => sum + (step.duration || 0), 0);
+        const llmCalls = arch.flowSteps.filter((s) => s.type === "llm").length;
+        
+        const complexityMap: Record<string, number> = {
+          Beginner: 1,
+          Intermediate: 2,
+          Advanced: 3,
+        };
+
+        // Get difficulty value with fallback
+        const difficultyValue = complexityMap[arch.difficulty] || 2;
+
+        // Latency (based on total duration, ensure minimum value)
+        const latency = Math.max(100, totalDuration);
+
+        // Cost (based on LLM calls, complexity) - clamp between 1 and 10
+        const rawCost = llmCalls * 2 + difficultyValue * 1.5;
+        const cost = Math.max(1, Math.min(10, rawCost));
+
+        // Accuracy (estimated based on architecture type)
+        const accuracyMap: Record<string, number> = {
+          "naive-rag": 0.75,
+          "multimodal-rag": 0.82,
+          "hyde-rag": 0.88,
+          "corrective-rag": 0.92,
+          "graph-rag": 0.85,
+          "hybrid-rag": 0.90,
+          "adaptive-rag": 0.87,
+          "agentic-rag": 0.93,
+        };
+        const accuracy = Math.max(0, Math.min(1, accuracyMap[arch.id] || 0.80));
+
+        // Complexity (based on difficulty and steps) - clamp between 1 and 5
+        const baseComplexity = difficultyValue;
+        const stepComplexity = arch.flowSteps.length > 5 ? 1 : 0;
+        const complexity = Math.max(1, Math.min(5, baseComplexity + stepComplexity));
+
+        // Scalability (inverse of complexity, more steps = less scalable) - clamp between 1 and 5
+        const scalability = Math.max(1, Math.min(5, 6 - complexity));
+
+        return { latency, cost, accuracy, complexity, scalability };
+      } catch (error) {
+        // Return default metrics if calculation fails
+        console.error("Error calculating performance metrics:", error);
+        return {
+          latency: 2000,
+          cost: 5,
+          accuracy: 0.80,
+          complexity: 2,
+          scalability: 3,
+        };
+      }
+    };
+
+    // Safely calculate metrics with error handling
+    try {
+      if (!architecture) {
+        throw new Error("Architecture is undefined");
+      }
+      return calculateMetrics(architecture);
+    } catch (error) {
+      console.error("Error in PerformanceDashboard:", error);
       return {
         latency: 2000,
         cost: 5,
@@ -31,51 +105,7 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
         scalability: 3,
       };
     }
-
-    const totalDuration = arch.flowSteps.reduce((sum, step) => sum + (step.duration || 0), 0);
-    const llmCalls = arch.flowSteps.filter((s) => s.type === "llm").length;
-    
-    const complexityMap: Record<string, number> = {
-      Beginner: 1,
-      Intermediate: 2,
-      Advanced: 3,
-    };
-
-    // Get difficulty value with fallback
-    const difficultyValue = complexityMap[arch.difficulty] || 2;
-
-    // Latency (based on total duration, ensure minimum value)
-    const latency = Math.max(100, totalDuration);
-
-    // Cost (based on LLM calls, complexity) - clamp between 1 and 10
-    const rawCost = llmCalls * 2 + difficultyValue * 1.5;
-    const cost = Math.max(1, Math.min(10, rawCost));
-
-    // Accuracy (estimated based on architecture type)
-    const accuracyMap: Record<string, number> = {
-      "naive-rag": 0.75,
-      "multimodal-rag": 0.82,
-      "hyde-rag": 0.88,
-      "corrective-rag": 0.92,
-      "graph-rag": 0.85,
-      "hybrid-rag": 0.90,
-      "adaptive-rag": 0.87,
-      "agentic-rag": 0.93,
-    };
-    const accuracy = Math.max(0, Math.min(1, accuracyMap[arch.id] || 0.80));
-
-    // Complexity (based on difficulty and steps) - clamp between 1 and 5
-    const baseComplexity = difficultyValue;
-    const stepComplexity = arch.flowSteps.length > 5 ? 1 : 0;
-    const complexity = Math.max(1, Math.min(5, baseComplexity + stepComplexity));
-
-    // Scalability (inverse of complexity, more steps = less scalable) - clamp between 1 and 5
-    const scalability = Math.max(1, Math.min(5, 6 - complexity));
-
-    return { latency, cost, accuracy, complexity, scalability };
-  };
-
-  const metrics = calculateMetrics(architecture);
+  }, [architecture]);
 
   const MetricCard = ({
     icon: Icon,
@@ -141,6 +171,27 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
       </div>
     );
   };
+
+  // Validate metrics before rendering
+  if (!metrics || typeof metrics.latency !== 'number' || typeof metrics.cost !== 'number' || 
+      typeof metrics.accuracy !== 'number' || typeof metrics.complexity !== 'number' || 
+      typeof metrics.scalability !== 'number') {
+    console.error("Invalid metrics calculated", metrics);
+    // Return a fallback UI instead of null
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-accent" />
+            Performance Metrics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-text-secondary">Metrics are currently unavailable. Please try refreshing the page.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">

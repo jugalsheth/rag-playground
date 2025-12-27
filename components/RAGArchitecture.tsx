@@ -86,7 +86,9 @@ export function RAGArchitecture({ architecture, onRunDemo }: RAGArchitectureProp
       <DemoPanel architecture={architecture} onRunDemo={handleRunDemo} />
 
       {/* Performance Dashboard */}
-      <PerformanceDashboard architecture={architecture} />
+      {architecture && (
+        <PerformanceDashboard architecture={architecture} />
+      )}
 
       {/* Code Snippet */}
       <CodeViewer codeSnippet={architecture.codeSnippet} />
