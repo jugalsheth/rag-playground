@@ -2,6 +2,7 @@ import { Navigation } from "@/components/Navigation";
 import { Hero } from "@/components/Hero";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, Zap, GitCompare } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -73,12 +74,12 @@ export default function Home() {
             Start with Naive RAG and work your way up to Agentic RAG. Each
             architecture builds on the previous one.
           </p>
-          <a
+          <Link
             href="/playground"
             className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-lg font-semibold hover:bg-primary-hover transition-colors glow-effect"
           >
             Start Exploring →
-          </a>
+          </Link>
         </div>
       </section>
 
