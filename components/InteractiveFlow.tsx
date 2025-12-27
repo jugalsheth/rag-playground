@@ -49,15 +49,16 @@ export function InteractiveFlow({
 }: InteractiveFlowProps) {
   return (
     <div className="w-full p-4 md:p-8">
-      <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 overflow-x-auto pb-4">
-        <AnimatePresence mode="wait">
-          {steps.map((step, index) => {
-            const Icon = stepIcons[step.type];
-            const isActive = activeStepId === step.id;
-            const isCompleted = steps.findIndex((s) => s.id === activeStepId) > index;
+      <div className="w-full overflow-x-auto overflow-y-visible pb-4">
+        <div className="inline-flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 px-2 md:px-4">
+          <AnimatePresence mode="wait">
+            {steps.map((step, index) => {
+              const Icon = stepIcons[step.type];
+              const isActive = activeStepId === step.id;
+              const isCompleted = steps.findIndex((s) => s.id === activeStepId) > index;
 
-            return (
-              <div key={step.id} className="flex items-center">
+              return (
+                <div key={step.id} className="flex items-center flex-shrink-0">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{
@@ -66,7 +67,7 @@ export function InteractiveFlow({
                   }}
                   transition={{ duration: 0.3 }}
                   className={cn(
-                    "relative flex flex-col items-center",
+                    "relative flex flex-col items-center flex-shrink-0",
                     isActive && "z-10"
                   )}
                 >
@@ -154,7 +155,8 @@ export function InteractiveFlow({
               </div>
             );
           })}
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Progress indicator */}
