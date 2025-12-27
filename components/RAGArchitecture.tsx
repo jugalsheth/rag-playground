@@ -7,7 +7,6 @@ import { CheckCircle2, XCircle, Lightbulb } from "lucide-react";
 import { CodeViewer } from "./CodeViewer";
 import { InteractiveFlow } from "./InteractiveFlow";
 import { DemoPanel } from "./DemoPanel";
-import { PerformanceDashboard } from "./PerformanceDashboard";
 import { useProgress } from "@/lib/progressContext";
 import { useState, useEffect } from "react";
 
@@ -84,11 +83,6 @@ export function RAGArchitecture({ architecture, onRunDemo }: RAGArchitectureProp
 
       {/* Demo Panel */}
       <DemoPanel architecture={architecture} onRunDemo={handleRunDemo} />
-
-      {/* Performance Dashboard */}
-      {architecture && (
-        <PerformanceDashboard architecture={architecture} />
-      )}
 
       {/* Code Snippet */}
       <CodeViewer codeSnippet={architecture.codeSnippet} />
