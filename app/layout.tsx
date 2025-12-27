@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ProgressProviderWrapper } from "@/components/ProgressProviderWrapper";
 
 export const metadata: Metadata = {
   title: "RAG Playground - Master RAG Architectures Through Play",
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background">
-        {children}
+        <ProgressProviderWrapper>
+          {children}
+        </ProgressProviderWrapper>
       </body>
     </html>
   );

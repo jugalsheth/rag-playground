@@ -8,7 +8,7 @@ import { CodeViewer } from "./CodeViewer";
 import { InteractiveFlow } from "./InteractiveFlow";
 import { DemoPanel } from "./DemoPanel";
 import { PerformanceDashboard } from "./PerformanceDashboard";
-import { useLearningProgress } from "./LearningProgress";
+import { useProgress } from "@/lib/progressContext";
 import { useState, useEffect } from "react";
 
 interface RAGArchitectureProps {
@@ -19,7 +19,7 @@ interface RAGArchitectureProps {
 export function RAGArchitecture({ architecture, onRunDemo }: RAGArchitectureProps) {
   const [activeStepId, setActiveStepId] = useState<string | undefined>();
   const [isRunning, setIsRunning] = useState(false);
-  const { updateProgress } = useLearningProgress();
+  const { updateProgress } = useProgress();
 
   useEffect(() => {
     // Mark as explored when component mounts

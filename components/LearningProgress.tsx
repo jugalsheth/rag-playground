@@ -1,57 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Trophy, Award, CheckCircle2, Sparkles, Target } from "lucide-react";
 import { ragArchitectures } from "@/lib/ragArchitectures";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface ProgressData {
-  explored: string[];
-  completed: string[];
-  lastVisited: string | null;
-}
+import { useProgress } from "@/lib/progressContext";
 
 export function LearningProgress() {
-  const [progress, setProgress] = useState<ProgressData>({
-    explored: [],
-    completed: [],
-    lastVisited: null,
-  });
-
-  useEffect(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem("rag-learning-progress");
-    if (saved) {
-      try {
-        setProgress(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load progress", e);
-      }
-    }
-  }, []);
-
-  const updateProgress = (architectureId: string, action: "explored" | "completed") => {
-    setProgress((prev) => {
-      const newProgress = {
-        ...prev,
-        explored: prev.explored.includes(architectureId)
-          ? prev.explored
-          : [...prev.explored, architectureId],
-        completed:
-          action === "completed"
-            ? prev.completed.includes(architectureId)
-              ? prev.completed
-              : [...prev.completed, architectureId]
-            : prev.completed,
-        lastVisited: architectureId,
-      };
-      localStorage.setItem("rag-learning-progress", JSON.stringify(newProgress));
-      return newProgress;
-    });
-  };
+  const { progress } = useProgress();
 
   const totalArchitectures = ragArchitectures.length;
   const exploredCount = progress.explored.length;
@@ -219,33 +176,5 @@ export function LearningProgress() {
       </CardContent>
     </Card>
   );
-}
-
-// Hook for updating progress (exported separately to avoid circular dependency)
-export function useLearningProgress() {
-  const updateProgress = (architectureId: string, action: "explored" | "completed") => {
-    const saved = localStorage.getItem("rag-learning-progress");
-    const progress: ProgressData = saved
-      ? JSON.parse(saved)
-      : { explored: [], completed: [], lastVisited: null };
-
-    const newProgress = {
-      ...progress,
-      explored: progress.explored.includes(architectureId)
-        ? progress.explored
-        : [...progress.explored, architectureId],
-      completed:
-        action === "completed"
-          ? progress.completed.includes(architectureId)
-            ? progress.completed
-            : [...progress.completed, architectureId]
-          : progress.completed,
-      lastVisited: architectureId,
-    };
-
-    localStorage.setItem("rag-learning-progress", JSON.stringify(newProgress));
-  };
-
-  return { updateProgress };
 }
 
