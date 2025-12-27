@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Zap, DollarSign, Target, BarChart3 } from "lucide-react";
+import { TrendingUp, Zap, DollarSign, Target, BarChart3, LucideIcon } from "lucide-react";
 import { RAGArchitecture } from "@/lib/ragArchitectures";
 import { motion } from "framer-motion";
 
@@ -21,9 +21,19 @@ interface PerformanceDashboardProps {
 export function PerformanceDashboard({ architecture }: PerformanceDashboardProps) {
   // Calculate metrics based on architecture
   const calculateMetrics = (arch: RAGArchitecture): PerformanceMetrics => {
-    const totalDuration = arch.flowSteps.reduce((sum, step) => sum + step.duration, 0);
+    if (!arch || !arch.flowSteps || arch.flowSteps.length === 0) {
+      // Return default metrics if architecture data is invalid
+      return {
+        latency: 2000,
+        cost: 5,
+        accuracy: 0.80,
+        complexity: 2,
+        scalability: 3,
+      };
+    }
+
+    const totalDuration = arch.flowSteps.reduce((sum, step) => sum + (step.duration || 0), 0);
     const llmCalls = arch.flowSteps.filter((s) => s.type === "llm").length;
-    const dbCalls = arch.flowSteps.filter((s) => s.type === "database").length;
     
     const complexityMap: Record<string, number> = {
       Beginner: 1,
@@ -31,11 +41,15 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
       Advanced: 3,
     };
 
-    // Latency (based on total duration)
-    const latency = totalDuration;
+    // Get difficulty value with fallback
+    const difficultyValue = complexityMap[arch.difficulty] || 2;
 
-    // Cost (based on LLM calls, complexity)
-    const cost = Math.min(10, llmCalls * 2 + complexityMap[arch.difficulty] * 1.5);
+    // Latency (based on total duration, ensure minimum value)
+    const latency = Math.max(100, totalDuration);
+
+    // Cost (based on LLM calls, complexity) - clamp between 1 and 10
+    const rawCost = llmCalls * 2 + difficultyValue * 1.5;
+    const cost = Math.max(1, Math.min(10, rawCost));
 
     // Accuracy (estimated based on architecture type)
     const accuracyMap: Record<string, number> = {
@@ -48,13 +62,15 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
       "adaptive-rag": 0.87,
       "agentic-rag": 0.93,
     };
-    const accuracy = accuracyMap[arch.id] || 0.80;
+    const accuracy = Math.max(0, Math.min(1, accuracyMap[arch.id] || 0.80));
 
-    // Complexity (based on difficulty and steps)
-    const complexity = complexityMap[arch.difficulty] + (arch.flowSteps.length > 5 ? 1 : 0);
+    // Complexity (based on difficulty and steps) - clamp between 1 and 5
+    const baseComplexity = difficultyValue;
+    const stepComplexity = arch.flowSteps.length > 5 ? 1 : 0;
+    const complexity = Math.max(1, Math.min(5, baseComplexity + stepComplexity));
 
-    // Scalability (inverse of complexity, more steps = less scalable)
-    const scalability = Math.max(1, 6 - complexity);
+    // Scalability (inverse of complexity, more steps = less scalable) - clamp between 1 and 5
+    const scalability = Math.max(1, Math.min(5, 6 - complexity));
 
     return { latency, cost, accuracy, complexity, scalability };
   };
@@ -69,7 +85,7 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
     color,
     trend,
   }: {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     value: number | string;
     unit?: string;
@@ -101,22 +117,30 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
     </motion.div>
   );
 
-  const BarMetric = ({ label, value, max, color }: { label: string; value: number; max: number; color: string }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-text-secondary">{label}</span>
-        <span className="text-sm font-semibold text-text-primary">{value.toFixed(1)}/{max}</span>
+  const BarMetric = ({ label, value, max, color }: { label: string; value: number; max: number; color: string }) => {
+    // Clamp value between 0 and max to prevent negative or overflow values
+    const clampedValue = Math.max(0, Math.min(max, value));
+    const percentage = max > 0 ? Math.max(0, Math.min(100, (clampedValue / max) * 100)) : 0;
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-text-secondary">{label}</span>
+          <span className="text-sm font-semibold text-text-primary">
+            {clampedValue.toFixed(1)}/{max}
+          </span>
+        </div>
+        <div className="h-2 bg-background-darker rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`h-full ${color} rounded-full`}
+          />
+        </div>
       </div>
-      <div className="h-2 bg-background-darker rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${(value / max) * 100}%` }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className={`h-full ${color} rounded-full`}
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Card className="w-full">
@@ -148,7 +172,7 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
           <MetricCard
             icon={Target}
             label="Accuracy"
-            value={(metrics.accuracy * 100).toFixed(0)}
+            value={Math.max(0, Math.min(100, metrics.accuracy * 100)).toFixed(0)}
             unit="%"
             color="text-purple-400"
             trend="up"
@@ -175,13 +199,13 @@ export function PerformanceDashboard({ architecture }: PerformanceDashboardProps
             />
             <BarMetric
               label="Cost Efficiency"
-              value={10 - metrics.cost}
+              value={Math.max(0, 10 - metrics.cost)}
               max={10}
               color="bg-gradient-to-r from-green-500 to-emerald-500"
             />
             <BarMetric
               label="Speed Performance"
-              value={5 - metrics.latency / 1000}
+              value={Math.max(0, 5 - metrics.latency / 1000)}
               max={5}
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
             />
